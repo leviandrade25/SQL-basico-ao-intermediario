@@ -1,0 +1,31 @@
+'Vamos imginar um cenário onde precisamos atualizar uma tabela  (aqui será compracliente) com uma informação que está em outra (tabela cliente)
+porém estas tabelas não possuem relação uma com a outro. Vamos usar uma tabela (compra) que possui "cliente" como chave estrangeria e ela mesma
+é chave estrangeira na "compracliente"'
+
+if object_id ('tempdb..#temp') is not null
+  begin
+    drop table #temp
+  end
+if object_id('tempdb..#temp') is null
+  begin
+    create table #temp (idcliente int, nome1 varchar(30), idcompra int, idcompracliente int)
+    insert into #temp (idcliente, nome1, idcompra, idcompracliente)
+    select cliente.IdCliente, cliente.NOME, compra.IdCompra,idcompracliente from cliente (nolock)
+    inner join compra on cliente.IdCliente=compra.IdCliente
+    inner join CompraCliente on compra.IdCompra=CompraCliente.IdCompra
+  end
+go
+--esta parte cria a tabela temporária com nome de #temp e deleta assim que o processo for concluido
+
+declare @teste int --declara a variável
+  select @teste = count(*) from CompraCliente --determina um valor para a variável
+  begin
+    while (@teste>0) --condição, enquanto a variável for maior que zero
+      begin
+        update CompraCliente set nome = nome1 from #temp
+        inner join CompraCliente on compracliente.IdCompraCliente=#temp.idcompracliente
+        where CompraCliente.nome!=#temp.nome1
+        set @teste = @teste - 1 --mundando o valor da variável ao fim de cada loop para que não entre em um loop eterno.
+      end
+  end
+  --esta parte é referente ao laço de repetição que executa quantas vezes necessário para que haja a atualização solicitada
